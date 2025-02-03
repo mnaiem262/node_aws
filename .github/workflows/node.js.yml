@@ -16,15 +16,18 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf "%s" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 44.206.229.203 >> ~/.ssh/known_hosts
 
       - name: Deploy to EC2
         run: |
           ssh ubuntu@44.206.229.203 << 'EOF'
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            mkdir -p ~/app
             cd ~/app
-            git pull origin main
+            git pull origin master
             npm install
-            pm2 restart my-app
+            pm2 restart my-app || pm2 start npm --name "my-app" -- run start
           EOF
